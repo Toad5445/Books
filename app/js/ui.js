@@ -29,7 +29,8 @@ export function svg(markup) {
 export function toast(message, { bad = false, ms = 3200 } = {}) {
   const el = h('div', { class: 'toast' + (bad ? ' bad' : '') }, message);
   document.getElementById('toasts').append(el);
-  setTimeout(() => el.remove(), ms);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, ms);
 }
 
 /** Bottom sheet. Returns { el, close }. */

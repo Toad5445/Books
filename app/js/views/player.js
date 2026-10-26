@@ -17,12 +17,32 @@ import { openAmbientSheet } from './ambient-sheet.js';
 const audio = document.getElementById('audio');
 let session = null; // what's loaded in the audio element: { id, url, manifest, book }
 
+// iPhones don't load audio until it's played, and quietly ignore a jump made
+// before then. So a jump made too early is remembered and applied once the
+// audio is ready, and the rest of the app reads the time through now().
+let pendingTime = null;
+const now = () => (pendingTime != null ? pendingTime : audio.currentTime);
+function setAudioTime(t) {
+  if (audio.readyState >= 1) {
+    try { audio.currentTime = t; pendingTime = null; return; } catch {}
+  }
+  pendingTime = t;
+}
+for (const ev of ['loadedmetadata', 'canplay', 'playing']) {
+  audio.addEventListener(ev, () => {
+    if (pendingTime == null || audio.readyState < 1) return;
+    const t = pendingTime;
+    pendingTime = null;
+    try { audio.currentTime = t; } catch { pendingTime = t; }
+  });
+}
+
 // Sleep timer survives leaving the player screen. It's checked on the audio's own
 // time updates, which keep firing when the phone is locked (timers may not).
 const sleep = { until: null, endOfChapter: false, chapterEnd: null, onFire: null };
 audio.addEventListener('timeupdate', () => {
   const byClock = sleep.until && Date.now() >= sleep.until;
-  const byChapter = sleep.endOfChapter && sleep.chapterEnd != null && audio.currentTime >= sleep.chapterEnd;
+  const byChapter = sleep.endOfChapter && sleep.chapterEnd != null && now() >= sleep.chapterEnd;
   if (!byClock && !byChapter) return;
   audio.pause();
   sleep.until = null; sleep.endOfChapter = false; sleep.chapterEnd = null;
@@ -31,9 +51,9 @@ audio.addEventListener('timeupdate', () => {
 
 // Keep saving the listening position while playing, even after leaving the player.
 setInterval(() => {
-  if (session && !audio.paused) library.saveProgress(session.id, audio.currentTime, session.duration);
+  if (session && !audio.paused) library.saveProgress(session.id, now(), session.duration);
 }, 10000);
-audio.addEventListener('pause', () => { if (session) library.saveProgress(session.id, audio.currentTime, session.duration); });
+audio.addEventListener('pause', () => { if (session) library.saveProgress(session.id, now(), session.duration); });
 
 export async function renderPlayer(root, id) {
   const book = library.books.get(id);
@@ -57,9 +77,13 @@ export async function renderPlayer(root, id) {
   if (session?.id !== id || session.audioVersion !== library.local.get(id)?.audioVersion) {
     if (session?.url) URL.revokeObjectURL(session.url);
     audio.pause();
-    const url = URL.createObjectURL(blob);
-    audio.src = url;
-    session = { id, url, duration, audioVersion: library.local.get(id)?.audioVersion };
+    const version = library.local.get(id)?.audioVersion;
+    // Through the service worker the audio behaves like a normal web file that
+    // the iPhone can jump around in; a blob URL is the fallback (e.g. on the PC).
+    const url = navigator.serviceWorker?.controller ? null : URL.createObjectURL(blob);
+    pendingTime = null;
+    audio.src = url || `audio/${encodeURIComponent(id)}.m4a?v=${version}`;
+    session = { id, url, duration, audioVersion: version };
     const saved = await library.progress(id);
     const startAt = saved && saved.time < duration - 2 ? saved.time : 0;
     await new Promise((res) => {
@@ -67,7 +91,7 @@ export async function renderPlayer(root, id) {
       audio.addEventListener('loadedmetadata', res, { once: true });
       setTimeout(res, 3000);
     });
-    try { audio.currentTime = startAt; } catch {}
+    setAudioTime(startAt);
   }
   audio.playbackRate = settings.get('speed');
   audio.preservesPitch = true;
@@ -186,7 +210,7 @@ export async function renderPlayer(root, id) {
   // ------------------------------------------------------------ reader
 
   let reader = null;
-  let current = segAt(audio.currentTime);
+  let current = segAt(now());
   let userScrolledAt = 0;
   let programmaticScroll = 0;
 
@@ -213,7 +237,7 @@ export async function renderPlayer(root, id) {
     reader.setDark(pdfDark());
     darkBtn.hidden = view !== 'page';
     reader.setActive(current);
-    reader.setTime(audio.currentTime);
+    reader.setTime(now());
     programmaticScroll = Date.now();
     requestAnimationFrame(() => reader?.scrollTo(current, false));
   }
@@ -233,21 +257,21 @@ export async function renderPlayer(root, id) {
   function play() { audio.play().catch((e) => toast('Couldn’t start playback: ' + e.message, { bad: true })); }
   function togglePlay() { audio.paused ? play() : audio.pause(); }
   function seek(t) {
-    audio.currentTime = Math.max(0, Math.min(duration - 0.05, t));
+    setAudioTime(Math.max(0, Math.min(duration - 0.05, t)));
     userScrolledAt = 0;
     tick(true);
   }
-  function skip(d) { seek(audio.currentTime + d); }
+  function skip(d) { seek(now() + d); }
 
   let dragging = null;
   function tick(force = false) {
-    const t = dragging != null ? dragging : audio.currentTime;
-    const i = segAt(audio.currentTime);
+    const t = dragging != null ? dragging : now();
+    const i = segAt(now());
     if (i !== current || force) {
       current = i;
       reader?.setActive(i);
     }
-    reader?.setTime(audio.currentTime);
+    reader?.setTime(now());
     // Follow along: as soon as the line being read moves into the lower part of
     // the screen (or above it), scroll it back up to about a third of the way down.
     if (settings.get('follow') && reader) {
@@ -326,7 +350,7 @@ export async function renderPlayer(root, id) {
   let lastSave = 0;
   function saveProgress() {
     lastSave = Date.now();
-    library.saveProgress(id, audio.currentTime, duration);
+    library.saveProgress(id, now(), duration);
   }
   const saver = setInterval(() => { if (!audio.paused && Date.now() - lastSave > 5000) saveProgress(); }, 5000);
   const onHide = () => { if (document.visibilityState === 'hidden') saveProgress(); };
@@ -542,7 +566,7 @@ async function setupMediaSession(book, id, { skip, seek, play, duration }) {
   set('previoustrack', null);
   set('nexttrack', null);
   const pos = () => {
-    try { ms.setPositionState({ duration, playbackRate: audio.playbackRate || 1, position: Math.min(audio.currentTime, duration) }); } catch {}
+    try { ms.setPositionState({ duration, playbackRate: audio.playbackRate || 1, position: Math.min(now(), duration) }); } catch {}
   };
   audio.onratechange = pos;
   audio.onseeked = pos;
