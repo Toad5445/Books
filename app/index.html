@@ -8,7 +8,6 @@
   <meta name="theme-color" content="#f7f6f2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Books">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -16,12 +15,22 @@
   <link rel="stylesheet" href="css/app.css">
   <script>
     // Apply the saved theme before first paint to avoid a flash.
+    var t = 'light';
     try {
       var s = JSON.parse(localStorage.getItem('books.settings') || '{}');
-      var t = s.theme || 'auto';
+      t = s.theme || 'auto';
       if (t === 'auto') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       document.documentElement.dataset.theme = t;
-    } catch (e) { document.documentElement.dataset.theme = 'light'; }
+    } catch (e) { t = 'light'; document.documentElement.dataset.theme = t; }
+    // iPhone home-screen apps only read this when they launch. Dark themes draw
+    // behind the status bar so it matches; light themes get the light bar.
+    var dark = t === 'dark' || t === 'black' || t === 'dusk';
+    var bar = document.createElement('meta');
+    bar.name = 'apple-mobile-web-app-status-bar-style';
+    bar.content = dark ? 'black-translucent' : 'default';
+    document.head.appendChild(bar);
+    var bgs = { light: '#f7f6f2', paper: '#f3ead8', forest: '#e9efe6', dark: '#17181a', dusk: '#1b1d2b', black: '#000000' };
+    document.querySelector('meta[name=theme-color]').content = bgs[t] || bgs.light;
   </script>
 </head>
 <body>

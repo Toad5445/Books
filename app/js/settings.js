@@ -55,8 +55,6 @@ export function applyTheme() {
   document.documentElement.dataset.theme = t;
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', bg);
-  const dark = ['dark', 'black', 'dusk'].includes(t);
-  document.querySelector('meta[name=apple-mobile-web-app-status-bar-style]')?.setAttribute('content', dark ? 'black' : 'default');
 }
 
 export function applyReaderSize() {
