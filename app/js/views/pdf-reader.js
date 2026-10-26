@@ -8,7 +8,7 @@ const MAX_CANVASES = 8; // iOS limits total canvas memory, so far-away pages are
 const MAX_PIXELS = 10e6; // per page canvas, also to stay inside iOS limits
 const MAX_ZOOM = 4;
 
-export async function createPdfReader(container, manifest, sourceBlob, { onSeek }) {
+export async function createPdfReader(container, manifest, sourceBlob, { onSeek, insets = () => ({ top: 8, bottom: 8 }) }) {
   const lib = await loadPdfJs();
   const pdf = await lib.getDocument({ data: new Uint8Array(await sourceBlob.arrayBuffer()) }).promise;
   const segs = manifest.segs;
@@ -206,16 +206,33 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek 
       const a = anchor(active, line);
       if (!a) return false;
       const y = a.wrap.offsetTop + a.wrap.offsetHeight * a.y - container.scrollTop;
-      const h = container.clientHeight;
-      if (strict) return y < 0 || y > h;
-      return y < h * 0.06 || y > h * 0.7;
+      const ins = insets();
+      const top = ins.top;
+      const bottom = container.clientHeight - ins.bottom;
+      if (strict) return y < top || y > bottom;
+      return y < top || y > top + (bottom - top) * 0.8;
     },
+    /** Scroll so the sentence being read starts at the top of the visible area
+     *  (or, deep inside a very long sentence, the line being read). */
     scrollTo(i, smooth = true) {
-      const k = i === active ? line : 0;
-      const a = anchor(i, k);
-      if (!a) return;
-      const top = a.wrap.offsetTop + a.wrap.offsetHeight * a.y - container.clientHeight * 0.3;
+      const ins = insets();
+      const room = container.clientHeight - ins.top - ins.bottom;
+      const lineTop = (j, k) => {
+        const s = segs[j];
+        const r = s?.r?.[Math.min(k, (s?.r?.length || 1) - 1)];
+        const wrap = wrappers[r ? r[0] : s?.p];
+        return wrap ? wrap.offsetTop + wrap.offsetHeight * (r ? r[2] : 0.05) : null;
+      };
+      let k = 0;
+      let y = lineTop(i, 0);
+      if (y == null) return;
+      if (i === active && line > 0) {
+        const cur = lineTop(i, line);
+        if (cur - y > room * 0.6) { y = cur; k = line; }
+      }
+      const top = y - ins.top - 6;
       const r = segs[i]?.r?.[Math.min(k, (segs[i]?.r?.length || 1) - 1)];
+      const a = anchor(i, k);
       const x = r ? (r[1] + r[3]) / 2 : 0.5;
       const left = zoom > 1.01 ? a.wrap.offsetLeft + a.wrap.offsetWidth * x - container.clientWidth / 2 : container.scrollLeft;
       container.scrollTo({ top: Math.max(0, top), left: Math.max(0, left), behavior: smooth ? 'smooth' : 'auto' });

@@ -147,6 +147,19 @@ export async function renderPlayer(root, id) {
   // Focus mode: the controls fade away while you read and come back with a tap.
   // Scrolling doesn't bring them back (a scroll never produces a click).
   let hideTimer = 0;
+  // How much of the reader the controls cover right now. Normally none (they sit
+  // above and below it); in focus mode they float over it, or only the iPhone's
+  // own status bar and home bar do when they've faded away.
+  const insets = () => {
+    if (!settings.get('focusMode')) return { top: 8, bottom: 8 };
+    if (page.classList.contains('ui-hidden')) {
+      return {
+        top: Math.max(8, parseFloat(getComputedStyle(top).paddingTop) || 8),
+        bottom: Math.max(16, (parseFloat(getComputedStyle(controls).paddingBottom) || 12) - 12 + 16),
+      };
+    }
+    return { top: top.offsetHeight + 8, bottom: controls.offsetHeight + 8 };
+  };
   const setUiHidden = (hidden) => page.classList.toggle('ui-hidden', hidden);
   const scheduleHide = () => {
     clearTimeout(hideTimer);
@@ -188,9 +201,9 @@ export async function renderPlayer(root, id) {
         const src = await library.source(id, (got, total) => {
           readerBox.firstChild && (readerBox.firstChild.textContent = `Downloading the original PDF… ${total ? Math.round((got / total) * 100) : ''}%`);
         });
-        reader = await createPdfReader(readerBox, manifest, src, { onSeek });
+        reader = await createPdfReader(readerBox, manifest, src, { onSeek, insets });
       } else {
-        reader = createTextReader(readerBox, manifest, { onSeek, font: settings.get('readerFont') });
+        reader = createTextReader(readerBox, manifest, { onSeek, font: settings.get('readerFont'), insets });
       }
     } catch (e) {
       readerBox.replaceChildren(h('div', { class: 'reader-loading' }, `Couldn’t show the ${view === 'page' ? 'original pages' : 'text'}: ${e.message}`));

@@ -6,7 +6,8 @@ import { settings } from '../settings.js';
 
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-export function createTextReader(container, manifest, { onSeek, font }) {
+// insets(): how much of the top and bottom of the screen the controls cover right now.
+export function createTextReader(container, manifest, { onSeek, font, insets = () => ({ top: 8, bottom: 8 }) }) {
   const segs = manifest.segs;
   const pages = manifest.pages || [];
   const root = document.createElement('div');
@@ -62,6 +63,11 @@ export function createTextReader(container, manifest, { onSeek, font }) {
     if (el) onSeek(Number(el.dataset.i));
   });
 
+  const visibleArea = () => {
+    const cbox = rect(container);
+    const ins = insets();
+    return { top: cbox.top + ins.top, bottom: cbox.bottom - ins.bottom };
+  };
   const focusEl = () => (wordEls && wordEls[Math.max(activeWord, 0)]) || activeEl || (active >= 0 ? spanFor(active) : null);
 
   function clear() {
@@ -119,19 +125,24 @@ export function createTextReader(container, manifest, { onSeek, font }) {
       const el = focusEl();
       if (!el) return false;
       const box = rect(el);
-      const cbox = rect(container);
-      const h = cbox.bottom - cbox.top;
-      if (strict) return box.bottom < cbox.top + 20 || box.top > cbox.bottom - 20;
-      return box.top < cbox.top + h * 0.06 || box.bottom > cbox.top + h * 0.7;
+      const { top, bottom } = visibleArea();
+      if (strict) return box.bottom < top || box.top > bottom;
+      return box.top < top - 2 || box.bottom > top + (bottom - top) * 0.8;
     },
     /** Element to keep in view for segment i. */
     target(i) { return spanFor(i); },
+    /** Scroll so the sentence being read starts at the top of the visible area
+     *  (or, deep inside a very long sentence, the line being read). */
     scrollTo(i, smooth = true) {
-      const el = i === active ? focusEl() : spanFor(i);
-      if (!el) return;
-      const box = rect(el);
-      const cbox = rect(container);
-      const y = container.scrollTop + box.top - cbox.top - container.clientHeight * 0.3;
+      const sentence = spanFor(i);
+      if (!sentence) return;
+      const { top, bottom } = visibleArea();
+      let anchor = rect(sentence).top;
+      if (i === active) {
+        const line = rect(focusEl());
+        if (line.bottom - anchor > (bottom - top) * 0.6) anchor = line.top;
+      }
+      const y = container.scrollTop + anchor - top;
       container.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' });
     },
     destroy() {},
