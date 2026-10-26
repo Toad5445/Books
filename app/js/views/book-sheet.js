@@ -24,8 +24,12 @@ export function openBookSheet(id) {
       rows.push(row(icons.download, st.stale ? 'Download the new audio' : 'Download to this device', fmtBytes(book.audio.size),
         async () => { try { await library.download(id); toast('Downloaded'); } catch (e) { toast(e.message, { bad: true }); } }));
     }
-    if (pc.available && ['queued', 'error'].includes(book.status)) {
+    const pcRunning = pc.available && ['running', 'waiting'].includes(pc.job(id)?.state);
+    if (pc.available && !pcRunning && ['queued', 'error', 'converting'].includes(book.status)) {
       rows.push(row(icons.pc, 'Convert now', 'On this PC', async () => { await pc.convert([id]); toast('Converting'); }));
+    }
+    if (book.status === 'converting' && !pcRunning) {
+      rows.push(row(icons.refresh, 'Stuck? Put it back in the queue', 'Use this if your PC stopped mid-way', () => act(() => library.retry(id), 'Back in the queue')));
     }
     if (book.status === 'error') {
       rows.push(row(icons.refresh, 'Try again', 'Puts it back in the queue', () => act(() => library.retry(id), 'Back in the queue')));

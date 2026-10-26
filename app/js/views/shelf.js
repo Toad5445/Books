@@ -111,7 +111,8 @@ function banner(icon, title, text, ok, progress) {
 function pcBanner(books) {
   const st = pc.status || {};
   const engine = st.engine || {};
-  const queued = books.filter((b) => b.status === 'queued' || b.status === 'error');
+  const running = (id) => ['running', 'waiting'].includes(st.jobs?.[id]?.state);
+  const queued = books.filter((b) => ['queued', 'error'].includes(b.status) || (b.status === 'converting' && !running(b.id)));
   const current = st.current && st.jobs?.[st.current];
   let title, text;
   if (current) {
@@ -169,7 +170,10 @@ function card(book) {
 
   const badges = [];
   const pcJobRunning = job && ['running', 'waiting'].includes(job.state);
-  switch (st.label) {
+  // On the PC, "converting" with nothing running here means the converter was closed mid-way.
+  const interrupted = pc.available && !pcJobRunning && st.label === 'converting';
+  switch (interrupted ? 'interrupted' : st.label) {
+    case 'interrupted': badges.push(badge('bad', 'Interrupted')); break;
     case 'uploading': badges.push(badge('work', `Uploading ${Math.round(st.uploading * 100)}%`, true)); break;
     case 'downloading': badges.push(badge('work', `Downloading ${Math.round(st.downloading * 100)}%`, true)); break;
     case 'converting': badges.push(badge('work', `Converting ${Math.round((pcJobRunning ? job.progress : book.progress || 0) * 100)}%`, true)); break;
@@ -181,7 +185,7 @@ function card(book) {
     default:
       if (book.audio?.duration) badges.push(h('span', { class: 'badge' }, listened > 0.995 ? 'Finished' : listened > 0 ? `${fmtDuration(book.audio.duration * (1 - listened))} left` : fmtDuration(book.audio.duration)));
   }
-  if (pc.available && !pcJobRunning && ['queued', 'revoice', 'error'].includes(st.label)) {
+  if (pc.available && !pcJobRunning && (interrupted || ['queued', 'revoice', 'error'].includes(st.label))) {
     badges.push(h('button', { class: 'btn primary small', style: { height: '26px', padding: '0 10px', fontSize: '12.5px' },
       onclick: async (e) => { e.stopPropagation(); await pc.convert([book.id]); toast(`Converting “${book.title}”`); } }, 'Convert'));
   }
