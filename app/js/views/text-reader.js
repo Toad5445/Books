@@ -59,6 +59,7 @@ export function createTextReader(container, manifest, { onSeek, font }) {
 
   return {
     setMode(m) { mode = m; const a = active; clear(); active = -1; if (a >= 0) this.setActive(a); },
+    setDark() {},
     setFont(f) { root.classList.toggle('sans', f === 'sans'); },
     setActive(i) {
       if (i === active) return;

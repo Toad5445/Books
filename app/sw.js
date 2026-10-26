@@ -1,6 +1,6 @@
 // Offline support: the app shell and libraries are cached so the app opens
 // (and downloaded books play) without a connection. GitHub API calls are never cached.
-const VERSION = 'books-v3';
+const VERSION = 'books-v4';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/main.js', 'js/ui.js', 'js/icons.js', 'js/db.js', 'js/settings.js', 'js/voices.js', 'js/github.js',
@@ -12,7 +12,7 @@ const SHELL = [
 const CDN = ['https://cdn.jsdelivr.net/'];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

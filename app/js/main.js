@@ -75,7 +75,12 @@ async function start() {
   });
 
   if ('serviceWorker' in navigator && !['localhost', '127.0.0.1'].includes(location.hostname)) {
+    const hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.register('sw.js').catch(() => {});
+    // A new version just took over: reload to use it, unless a book is playing.
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController && audio.paused) location.reload();
+    });
   }
 }
 

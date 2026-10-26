@@ -48,7 +48,7 @@ export function sheet(build, { onClose } = {}) {
   host.append(backdrop, panel);
   const api = { el: panel, close };
   const content = build(api);
-  if (content) panel.append(...[content].flat());
+  if (content) panel.append(...[content].flat().filter((c) => c != null && c !== false));
   requestAnimationFrame(() => requestAnimationFrame(() => { panel.classList.add('open'); backdrop.classList.add('open'); }));
 
   // Swipe down on the grab handle area to close.

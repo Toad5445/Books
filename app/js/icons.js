@@ -34,5 +34,6 @@ export const icons = {
   flame: s('<path d="M12 22c4 0 7-2.7 7-7 0-4.5-4-7-5-12-2 2-3 4.5-3 6.5C9.5 8 9 7 8.5 6 6.5 8.5 5 11.5 5 15c0 4.3 3 7 7 7z"/>'),
   noise: s('<path d="M3 12h2l2-6 3 12 3-9 2 6 2-3h4"/>'),
   music: s('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
+  contrast: s('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>'),
   key: s('<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2M16 7l3 3M18 5l2 2"/>'),
 };

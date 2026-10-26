@@ -90,6 +90,10 @@ export async function renderPlayer(root, id) {
 
   let view = isPdf ? settings.get('view') : 'text';
   const readerBox = h('div', { class: 'reader' });
+  const isDarkTheme = () => ['dark', 'black', 'dusk'].includes(document.documentElement.dataset.theme);
+  const pdfDark = () => settings.get('pdfDark') ?? isDarkTheme();
+  const darkBtn = h('button', { class: 'page-dark-btn', 'aria-label': 'Dark pages', hidden: true,
+    onclick: () => { settings.set({ pdfDark: !pdfDark() }); toast(pdfDark() ? 'Dark pages on' : 'Dark pages off'); } }, svg(icons.contrast));
   const followPill = h('button', { class: 'follow-pill', hidden: true, onclick: () => { userScrolledAt = 0; followPill.hidden = true; reader?.scrollTo(current); } },
     svg(icons.target), 'Back to where you are');
   const viewToggle = isPdf
@@ -136,7 +140,7 @@ export async function renderPlayer(root, id) {
     h('div', { class: 'times' }, tNow, tLeft),
     h('div', { class: 'transport' }, speedBtn, backBtn, playBtn, fwdBtn, chapBtn));
 
-  root.replaceChildren(h('div', { class: 'player-page' }, top, h('div', { class: 'reader-wrap' }, readerBox, followPill), controls));
+  root.replaceChildren(h('div', { class: 'player-page' }, top, h('div', { class: 'reader-wrap' }, readerBox, followPill, darkBtn), controls));
 
   // ------------------------------------------------------------ reader
 
@@ -148,6 +152,7 @@ export async function renderPlayer(root, id) {
   async function mountReader() {
     reader?.destroy();
     reader = null;
+    darkBtn.hidden = true;
     readerBox.replaceChildren(h('div', { class: 'reader-loading' }, 'Loading…'));
     const onSeek = (i) => { seek(segs[i].a); if (audio.paused) play(); };
     try {
@@ -164,6 +169,8 @@ export async function renderPlayer(root, id) {
       return;
     }
     reader.setMode(settings.get('highlight'));
+    reader.setDark(pdfDark());
+    darkBtn.hidden = view !== 'page';
     reader.setActive(current);
     reader.setTime(audio.currentTime);
     programmaticScroll = Date.now();
@@ -416,6 +423,7 @@ export async function renderPlayer(root, id) {
           }),
           row(icons.list, 'Chapters', null, openChapters),
           row(icons.page, 'Go to page', null, openGoTo),
+          view === 'page' ? row(icons.contrast, pdfDark() ? 'Light pages' : 'Dark pages', 'Invert the original pages', () => settings.set({ pdfDark: !pdfDark() })) : null,
           row(icons.moon, 'Sleep timer', null, openSleep),
           row(icons.waves, 'Background sounds', 'Rain, fire, lofi and more', openAmbientSheet),
           row(icons.settings, 'Display and highlighting', null, openDisplay)),
@@ -429,6 +437,7 @@ export async function renderPlayer(root, id) {
 
   const offSettings = settings.onChange((patch) => {
     if ('highlight' in patch) reader?.setMode(patch.highlight);
+    if ('pdfDark' in patch || 'theme' in patch) reader?.setDark(pdfDark());
     if ('readerFont' in patch) reader?.setFont(patch.readerFont);
     if ('skipBack' in patch) backBtn.querySelector('span').textContent = patch.skipBack;
     if ('skipForward' in patch) fwdBtn.querySelector('span').textContent = patch.skipForward;

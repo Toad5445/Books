@@ -135,6 +135,7 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek 
 
   return {
     setMode(m) { mode = m; draw(); },
+    setDark(on) { root.classList.toggle('dark', on); },
     setFont() {},
     setActive(i) { if (i !== active) { active = i; draw(); } },
     setTime() {},
