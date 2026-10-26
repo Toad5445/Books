@@ -176,10 +176,10 @@ export async function renderPlayer(root, id) {
       e.stopPropagation(); // this tap only brings the controls back
       setUiHidden(false);
       scheduleHide();
-    } else if (!e.target.closest('.s')) {
+    } else {
       clearTimeout(hideTimer);
       setUiHidden(true);
-    } else scheduleHide();
+    }
   }, true);
   for (const el of [top, controls]) el.addEventListener('pointerdown', scheduleHide);
 
@@ -195,7 +195,7 @@ export async function renderPlayer(root, id) {
     reader = null;
     darkBtn.hidden = true;
     readerBox.replaceChildren(h('div', { class: 'reader-loading' }, 'Loading…'));
-    const onSeek = (i) => { seek(segs[i].a); if (audio.paused) play(); };
+    const onSeek = (i) => { seek(segs[i].a); if (audio.paused) play(); toast(`Playing from here`); };
     try {
       if (view === 'page') {
         const src = await library.source(id, (got, total) => {

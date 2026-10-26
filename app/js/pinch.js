@@ -33,3 +33,31 @@ export function onPinch(el, { start, move, end }) {
   el.addEventListener('touchend', finish);
   el.addEventListener('touchcancel', finish);
 }
+
+/** Press and hold (or double-click with a mouse). fn(event-like {target, clientX, clientY}).
+ *  Moving the finger (scrolling) cancels it, so it never fires while you scroll. */
+export function onLongPress(el, fn, ms = 500) {
+  let timer = 0;
+  let start = null;
+  let fired = false;
+  el.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) { clearTimeout(timer); return; }
+    const t = e.touches[0];
+    start = { x: t.clientX, y: t.clientY };
+    fired = false;
+    const target = e.target;
+    clearTimeout(timer);
+    timer = setTimeout(() => { fired = true; fn({ target, clientX: start.x, clientY: start.y }); }, ms);
+  }, { passive: true });
+  el.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    if (start && Math.hypot(t.clientX - start.x, t.clientY - start.y) > 10) clearTimeout(timer);
+  }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    clearTimeout(timer);
+    if (fired) e.preventDefault(); // no click after a long press
+  });
+  el.addEventListener('touchcancel', () => clearTimeout(timer));
+  el.addEventListener('dblclick', (e) => fn(e));
+  el.addEventListener('contextmenu', (e) => e.preventDefault());
+}

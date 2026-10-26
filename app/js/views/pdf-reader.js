@@ -2,7 +2,7 @@
 
 import { loadPdfJs } from '../bookinfo.js';
 import { point, rect } from '../rotation.js';
-import { onPinch } from '../pinch.js';
+import { onPinch, onLongPress } from '../pinch.js';
 
 const MAX_CANVASES = 8; // iOS limits total canvas memory, so far-away pages are released
 const MAX_PIXELS = 10e6; // per page canvas, also to stay inside iOS limits
@@ -36,6 +36,7 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek,
     const w = Math.round(baseWidth() * zoom);
     for (const wrap of wrappers) wrap.style.width = `${w}px`;
     root.classList.toggle('zoomed', zoom > 1.01);
+    container.classList.toggle('pan-x', zoom > 1.01); // sideways scrolling only while zoomed in
   }
   layout();
 
@@ -132,8 +133,9 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek,
   }, { root: container, rootMargin: '120% 0px' });
   wrappers.forEach((w) => io.observe(w));
 
-  root.addEventListener('click', (e) => {
-    const wrap = e.target.closest('.pdf-page');
+  // Press and hold a sentence on the page to play from there.
+  onLongPress(root, (e) => {
+    const wrap = e.target.closest?.('.pdf-page');
     if (!wrap) return;
     const p = Number(wrap.dataset.p);
     const box = rect(wrap);
@@ -240,6 +242,7 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek,
     destroy() {
       io.disconnect();
       window.removeEventListener('resize', onResize);
+      container.classList.remove('pan-x');
       for (const c of rendered.values()) { c.width = c.height = 0; }
       rendered.clear();
       pdf.destroy();

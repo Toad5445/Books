@@ -88,7 +88,7 @@ While listening:
 
 - **Speed:** tap `1×` at bottom left.
 - **Jump:** drag the timeline (it shows the page and chapter as you drag), tap **Page X of Y** to go to a page, or tap ☰ for chapters.
-- **Text / Page:** the switch at the top flips between extracted text and the original PDF pages. Tap any sentence to jump there.
+- **Text / Page:** the switch at the top flips between extracted text and the original PDF pages. Press and hold any sentence to play from there. Pinch to zoom the pages (or, in Text view, to change the text size).
 - **Change voice:** **⋯ → Change voice from here.** Your PC re-records from that point onwards. Keep listening to the current audio meanwhile; when it's done the book shows **New audio ready**.
 - **Sleep timer:** the moon icon.
 - **Background sounds:** the wave icon next to it. Switch on as many as you like and set each one's volume, or add your own song from the Files app.

@@ -1,6 +1,6 @@
 // Offline support: the app shell and libraries are cached so the app opens
 // (and downloaded books play) without a connection. GitHub API calls are never cached.
-const VERSION = 'books-v9';
+const VERSION = 'books-v10';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/main.js', 'js/ui.js', 'js/icons.js', 'js/db.js', 'js/settings.js', 'js/voices.js', 'js/github.js',

@@ -1,7 +1,7 @@
 // Shows the book's extracted text, page by page, with sentence/word highlighting.
 
 import { rect } from '../rotation.js';
-import { onPinch } from '../pinch.js';
+import { onPinch, onLongPress } from '../pinch.js';
 import { settings } from '../settings.js';
 
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -58,8 +58,9 @@ export function createTextReader(container, manifest, { onSeek, font, insets = (
   let activeWord = -1;
   let mode = 'word';
 
-  root.addEventListener('click', (e) => {
-    const el = e.target.closest('.s');
+  // Press and hold a sentence to play from there (a plain tap doesn't move the audio).
+  onLongPress(root, (e) => {
+    const el = e.target.closest?.('.s');
     if (el) onSeek(Number(el.dataset.i));
   });
 
