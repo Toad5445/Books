@@ -1,4 +1,4 @@
-# Books
+# Audiobooks
 
 Turn your PDFs and EPUBs into natural-sounding audiobooks with the [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) voice model.
 Add books from your iPhone or PC, convert them on your PC's graphics card, and listen on your phone with a
@@ -72,7 +72,7 @@ The key can only touch your `books-library` repo.
 
 1. Open **https://toad5445.github.io/Books/** in **Safari**.
 2. Tap **Share → Add to Home Screen → Add**.
-3. Open **Books** from your home screen (not from Safari). Go to **gear → Library**, enter the same repo and access key, then **Save and connect**.
+3. Open **Audiobooks** from your home screen (not from Safari). Go to **gear → Library**, enter the same repo and access key, then **Save and connect**.
 
 ---
 

@@ -122,7 +122,7 @@ export function openSettings({ focus } = {}) {
           close();
         } }, svg(icons.trash), h('span', { class: 'grow' }, 'Remove all downloads'))),
 
-      h('p', { class: 'small muted', style: { textAlign: 'center', marginTop: '24px' } }, `Books · version ${VERSION} · voices by Kokoro`),
+      h('p', { class: 'small muted', style: { textAlign: 'center', marginTop: '24px' } }, `Audiobooks · version ${VERSION} · voices by Kokoro`),
     ];
     if (focus === 'library') setTimeout(() => libSection.scrollIntoView({ block: 'start', behavior: 'smooth' }), 350);
     return out;

@@ -77,10 +77,10 @@
   <path d="M260 324c32-21 76-28 122-23v114c-46-5-90 2-122 23z" fill="url(#pageR)"/>
   <!-- spine shadow -->
   <path d="M256 330v112" stroke="#9c93ad" stroke-width="3" opacity=".5"/>
-  <!-- quiet lines of text -->
+  <!-- quiet lines of text, centred on each page -->
   <g stroke-width="5" stroke-linecap="round" fill="none">
-    <path d="M156 344c24-2 46 2 68 11M156 370c24-2 46 2 68 11M156 396c24-2 46 2 68 11" stroke="#d8ccb5"/>
-    <path d="M288 355c22-9 44-13 68-11M288 381c22-9 44-13 68-11M288 407c22-9 44-13 68-11" stroke="#d2c8e2"/>
+    <path d="M156 334c24-2 46 2 68 11M156 362c24-2 46 2 68 11M156 390c24-2 46 2 68 11" stroke="#d8ccb5"/>
+    <path d="M288 345c22-9 44-13 68-11M288 373c22-9 44-13 68-11M288 401c22-9 44-13 68-11" stroke="#d2c8e2"/>
   </g>
   </g>
 </svg>

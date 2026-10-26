@@ -1,6 +1,6 @@
 {
-  "name": "Books",
-  "short_name": "Books",
+  "name": "Audiobooks",
+  "short_name": "Audiobooks",
   "description": "Your PDFs and EPUBs as natural-sounding audiobooks.",
   "start_url": "./",
   "scope": "./",

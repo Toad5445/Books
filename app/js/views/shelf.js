@@ -94,7 +94,7 @@ export function renderShelf(root) {
 function welcome() {
   return h('div', { class: 'empty' },
     h('div', { class: 'art' }, svg(icons.book)),
-    h('h2', {}, 'Welcome to Books'),
+    h('h2', {}, 'Welcome to Audiobooks'),
     h('p', {}, 'Connect your private library on GitHub to get started. It’s where your PC and phone swap books and audio.'),
     h('button', { class: 'btn primary', onclick: () => openSettings({ focus: 'library' }) }, svg(icons.key), 'Connect library'));
 }

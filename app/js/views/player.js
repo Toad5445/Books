@@ -563,7 +563,7 @@ async function setupMediaSession(book, id, { skip, seek, play, duration }) {
     if (cover) artwork.push({ src: URL.createObjectURL(cover), sizes: '512x512', type: 'image/jpeg' });
   } catch {}
   if (!artwork.length) artwork.push({ src: new URL('icons/icon-512.png', location.href).href, sizes: '512x512', type: 'image/png' });
-  navigator.mediaSession.metadata = new MediaMetadata({ title: book.title, artist: book.author || voiceById(book.voice).name, album: 'Books', artwork });
+  navigator.mediaSession.metadata = new MediaMetadata({ title: book.title, artist: book.author || voiceById(book.voice).name, album: 'Audiobooks', artwork });
   const ms = navigator.mediaSession;
   const set = (action, fn) => { try { ms.setActionHandler(action, fn); } catch {} };
   set('play', () => play());
