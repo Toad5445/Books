@@ -22,7 +22,7 @@ timeline linked to the book's pages.
 - A timeline linked to pages: drag it to see "Page 142 · Chapter 9", or tap a page number to jump there
 - Read along in the extracted text or the original PDF pages, with optional sentence or word highlighting
 - A bookshelf with covers, progress, and a queue showing which books still need converting
-- Background sounds under the book (rain, fireplace, ocean, brown noise, lofi, bossa nova guitar, or your own songs), each with its own volume
+- Background sounds under the book (rain, fireplace, ocean, pink noise, shuffled lofi and bossa nova stations that fade from song to song, or your own songs), each with its own volume
 - Sleep timer, lock-screen controls, offline listening
 - Themes: Light, Paper, Forest, Dark, Dusk, Black (OLED), or Auto
 
@@ -120,7 +120,11 @@ While listening:
 | `app/` | GitHub Pages | The installable web app (no build step). It talks to your library through the GitHub API. Uses pdf.js for the Page view and [kokoro-js](https://www.npmjs.com/package/kokoro-js) for on-phone previews. |
 | `converter/` | Your PC | `server.py` (local web server and queue), `extract.py` (PDF/EPUB text, page positions, OCR with RapidOCR), `synth.py` (Kokoro and AAC audio), `convert.py` (the pipeline), `store.py` (library access). |
 
-The background sounds in `app/sounds/` are generated from scratch by `tools/make_sounds.py`, so there are no licensing questions.
+The nature sounds in `app/sounds/` are generated from scratch by `tools/make_sounds.py`.
+
+**Music credits** (listed in `tools/music.json`):
+- Lofi: songs by Loyalty Freak Music, released into the public domain (CC0 1.0).
+- Bossa nova: "Bossa Antigua", "Bossa Bossa", "Samba Isobel", "Casa Bossa Nova" and "Backbay Lounge" by Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/).
 
 The library repo layout is `books/<id>/book.json` (status and voice), `source.pdf|epub`, `manifest.json` (every sentence with its page, its position on the page and word timings), `cover.jpg`, and `voices/*.m4a` samples.
 Audio lives on a branch per book (`audio/<id>`), so deleting a book really frees the space.

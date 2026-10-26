@@ -21,24 +21,117 @@
   "loop": 64.0
  },
  {
-  "id": "brown",
-  "name": "Brown noise",
+  "id": "pink",
+  "name": "Pink noise",
   "kind": "nature",
-  "file": "sounds/brown.m4a",
+  "file": "sounds/pink.m4a",
   "loop": 60.0
  },
  {
   "id": "lofi",
-  "name": "Lofi beats",
+  "name": "Lofi",
   "kind": "music",
-  "file": "sounds/lofi.m4a",
-  "loop": 103.7838
+  "credit": "Music by Loyalty Freak Music, public domain (CC0).",
+  "tracks": [
+   {
+    "file": "sounds/music/lofi-1.m4a",
+    "title": "Drowning in your smile",
+    "artist": "Loyalty Freak Music",
+    "duration": 205.4,
+    "license": "CC0 1.0"
+   },
+   {
+    "file": "sounds/music/lofi-2.m4a",
+    "title": "Dancing in the street",
+    "artist": "Loyalty Freak Music",
+    "duration": 158.6,
+    "license": "CC0 1.0"
+   },
+   {
+    "file": "sounds/music/lofi-3.m4a",
+    "title": "Aeroplane",
+    "artist": "Loyalty Freak Music",
+    "duration": 134.4,
+    "license": "CC0 1.0"
+   },
+   {
+    "file": "sounds/music/lofi-4.m4a",
+    "title": "I'm glad you are here with me",
+    "artist": "Loyalty Freak Music",
+    "duration": 126.9,
+    "license": "CC0 1.0"
+   },
+   {
+    "file": "sounds/music/lofi-5.m4a",
+    "title": "Crying those tears I've kept so long",
+    "artist": "Loyalty Freak Music",
+    "duration": 116.6,
+    "license": "CC0 1.0"
+   },
+   {
+    "file": "sounds/music/lofi-6.m4a",
+    "title": "This pain is soft but here",
+    "artist": "Loyalty Freak Music",
+    "duration": 115.2,
+    "license": "CC0 1.0"
+   },
+   {
+    "file": "sounds/music/lofi-7.m4a",
+    "title": "I hope you're happy",
+    "artist": "Loyalty Freak Music",
+    "duration": 174.5,
+    "license": "CC0 1.0"
+   },
+   {
+    "file": "sounds/music/lofi-8.m4a",
+    "title": "Sugar and coffee",
+    "artist": "Loyalty Freak Music",
+    "duration": 106.8,
+    "license": "CC0 1.0"
+   }
+  ]
  },
  {
   "id": "bossa",
-  "name": "Bossa nova guitar",
+  "name": "Bossa nova",
   "kind": "music",
-  "file": "sounds/bossa.m4a",
-  "loop": 58.1818
+  "credit": "Music by Kevin MacLeod (incompetech.com), licensed under CC BY 4.0 (creativecommons.org/licenses/by/4.0).",
+  "tracks": [
+   {
+    "file": "sounds/music/bossa-1.m4a",
+    "title": "Bossa Antigua",
+    "artist": "Kevin MacLeod",
+    "duration": 280.7,
+    "license": "CC BY 4.0"
+   },
+   {
+    "file": "sounds/music/bossa-2.m4a",
+    "title": "Bossa Bossa",
+    "artist": "Kevin MacLeod",
+    "duration": 164.3,
+    "license": "CC BY 4.0"
+   },
+   {
+    "file": "sounds/music/bossa-3.m4a",
+    "title": "Samba Isobel",
+    "artist": "Kevin MacLeod",
+    "duration": 247.9,
+    "license": "CC BY 4.0"
+   },
+   {
+    "file": "sounds/music/bossa-4.m4a",
+    "title": "Casa Bossa Nova",
+    "artist": "Kevin MacLeod",
+    "duration": 236.8,
+    "license": "CC BY 4.0"
+   },
+   {
+    "file": "sounds/music/bossa-5.m4a",
+    "title": "Backbay Lounge",
+    "artist": "Kevin MacLeod",
+    "duration": 266.0,
+    "license": "CC BY 4.0"
+   }
+  ]
  }
 ]

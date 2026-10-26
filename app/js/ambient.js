@@ -1,5 +1,6 @@
-// Background sounds mixed under the book: built-in loops plus your own files.
-// Uses Web Audio so each sound loops gaplessly and has its own volume
+// Background sounds mixed under the book: nature loops, music stations that
+// shuffle songs and crossfade between them, and your own files.
+// Everything goes through Web Audio so each sound has its own volume
 // (iPhones ignore the volume of plain <audio> elements).
 
 import { db } from './db.js';
@@ -10,7 +11,8 @@ const listeners = new Set();
 let ctx = null;
 let builtIns = null;
 const loaded = new Map(); // id -> AudioBuffer
-const playing = new Map(); // id -> { src, gain }
+const playing = new Map(); // id -> { src, gain } for loops, or a Station
+const FADE = 6; // seconds songs overlap when a station moves to the next one
 
 const active = () => ({ ...(settings.get('ambient') || {}) }); // id -> volume 0..1
 const emit = () => listeners.forEach((fn) => fn());
@@ -41,9 +43,109 @@ async function load(id) {
   return buffer;
 }
 
+/** A music station: plays its songs in random order, fading each into the next. */
+class Station {
+  constructor(item) {
+    this.item = item;
+    this.out = ctx.createGain();
+    this.out.gain.value = 0;
+    this.out.connect(ctx.destination);
+    this.decks = [this.deck(), this.deck()];
+    this.cur = 0;
+    this.bag = [];
+    this.last = -1;
+    this.fading = false;
+    this.paused = false;
+  }
+
+  deck() {
+    const el = new Audio();
+    el.preload = 'auto';
+    el.playsInline = true;
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    ctx.createMediaElementSource(el).connect(gain).connect(this.out);
+    const d = { el, gain, track: null };
+    el.addEventListener('timeupdate', () => this.check(d));
+    el.addEventListener('ended', () => { if (d === this.decks[this.cur]) this.next(0.5); });
+    return d;
+  }
+
+  pick() {
+    if (!this.bag.length) {
+      this.bag = this.item.tracks.map((_, i) => i).sort(() => Math.random() - 0.5);
+      if (this.bag[0] === this.last && this.bag.length > 1) this.bag.push(this.bag.shift());
+    }
+    this.last = this.bag.shift();
+    return this.item.tracks[this.last];
+  }
+
+  async play(d, track, fadeIn, offset = 0) {
+    d.track = track;
+    d.el.src = track.file;
+    if (offset) d.el.addEventListener('loadedmetadata', () => { d.el.currentTime = offset; }, { once: true });
+    d.gain.gain.cancelScheduledValues(ctx.currentTime);
+    d.gain.gain.setValueAtTime(0, ctx.currentTime);
+    d.gain.gain.linearRampToValueAtTime(1, ctx.currentTime + fadeIn);
+    if (!this.paused) await d.el.play().catch(() => {});
+    emit();
+  }
+
+  start(volume) {
+    this.setVolume(volume);
+    const track = this.pick();
+    // Start somewhere inside the first song so it doesn't always open the same way.
+    this.play(this.decks[this.cur], track, 2, Math.random() * Math.max(0, (track.duration || 120) * 0.6));
+  }
+
+  check(d) {
+    if (d !== this.decks[this.cur] || this.fading || !d.el.duration) return;
+    if (d.el.duration - d.el.currentTime <= FADE) this.next(FADE);
+  }
+
+  next(fade) {
+    this.fading = true;
+    const old = this.decks[this.cur];
+    this.cur = 1 - this.cur;
+    old.gain.gain.cancelScheduledValues(ctx.currentTime);
+    old.gain.gain.setValueAtTime(old.gain.gain.value, ctx.currentTime);
+    old.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + fade);
+    setTimeout(() => { if (old !== this.decks[this.cur]) old.el.pause(); this.fading = false; }, fade * 1000 + 200);
+    this.play(this.decks[this.cur], this.pick(), fade);
+  }
+
+  setVolume(v) { this.out.gain.setTargetAtTime(gainFor(v), ctx.currentTime, 0.08); }
+
+  pause() {
+    this.paused = true;
+    this.decks.forEach((d) => d.el.pause());
+  }
+
+  resume() {
+    if (!this.paused) return;
+    this.paused = false;
+    this.decks[this.cur].el.play().catch(() => {});
+    if (this.fading) this.decks[1 - this.cur].el.play().catch(() => {});
+  }
+
+  stop() {
+    this.out.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
+    setTimeout(() => { this.decks.forEach((d) => { d.el.pause(); d.el.removeAttribute('src'); }); this.out.disconnect(); }, 1500);
+  }
+
+  get nowPlaying() { return this.decks[this.cur].track; }
+}
+
 async function start(id) {
   if (playing.has(id)) return;
   const c = context();
+  const station = (await ambient.builtIns()).find((s) => s.id === id && s.tracks);
+  if (station) {
+    const st = new Station(station);
+    playing.set(id, st);
+    st.start(active()[id]);
+    return;
+  }
   const buffer = await load(id);
   if (playing.has(id) || !(id in active())) return;
   const src = c.createBufferSource();
@@ -63,6 +165,7 @@ function stop(id) {
   const p = playing.get(id);
   if (!p) return;
   playing.delete(id);
+  if (p instanceof Station) return p.stop();
   p.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.25);
   setTimeout(() => { try { p.src.stop(); } catch {} }, 1200);
 }
@@ -71,7 +174,13 @@ export const ambient = {
   onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
 
   async builtIns() {
-    builtIns ??= await fetch('sounds/index.json').then((r) => r.json()).catch(() => []);
+    if (!builtIns) {
+      builtIns = await fetch('sounds/index.json').then((r) => r.json()).catch(() => []);
+      // Forget sounds that were removed in an update (custom ones start with "c").
+      const a = active();
+      const gone = Object.keys(a).filter((id) => !id.startsWith('c') && !builtIns.some((s) => s.id === id));
+      if (builtIns.length && gone.length) { gone.forEach((id) => delete a[id]); settings.set({ ambient: a }); emit(); }
+    }
     return builtIns;
   },
 
@@ -106,7 +215,8 @@ export const ambient = {
     a[id] = v;
     settings.set({ ambient: a });
     const p = playing.get(id);
-    if (p) p.gain.gain.setTargetAtTime(gainFor(v), ctx.currentTime, 0.08);
+    if (p instanceof Station) p.setVolume(v);
+    else if (p) p.gain.gain.setTargetAtTime(gainFor(v), ctx.currentTime, 0.08);
   },
 
   async addCustom(file) {
@@ -127,11 +237,24 @@ export const ambient = {
   resume() {
     if (!this.anyOn()) return;
     context();
-    for (const id of Object.keys(active())) start(id).catch(() => {});
+    for (const p of playing.values()) if (p instanceof Station) p.resume();
+    for (const id of Object.keys(active())) {
+      start(id).catch(() => {
+        // A sound that no longer exists (e.g. renamed in an update): switch it off.
+        if (!id.startsWith('c')) { const left = active(); delete left[id]; settings.set({ ambient: left }); emit(); }
+      });
+    }
   },
 
   pause() {
+    for (const p of playing.values()) if (p instanceof Station) p.pause();
     if (ctx && ctx.state === 'running') ctx.suspend().catch(() => {});
+  },
+
+  /** The song a music station is playing right now, if any. */
+  nowPlaying(id) {
+    const p = playing.get(id);
+    return p instanceof Station ? p.nowPlaying : null;
   },
 };
 

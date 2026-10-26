@@ -1,6 +1,6 @@
 // Offline support: the app shell and libraries are cached so the app opens
 // (and downloaded books play) without a connection. GitHub API calls are never cached.
-const VERSION = 'books-v4';
+const VERSION = 'books-v5';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/main.js', 'js/ui.js', 'js/icons.js', 'js/db.js', 'js/settings.js', 'js/voices.js', 'js/github.js',
@@ -33,10 +33,11 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   if (url.origin !== location.origin) return;
+  if (req.headers.has('range')) return; // streamed music: straight from the network
   // App files: answer from cache straight away, refresh it in the background.
   e.respondWith(caches.open(VERSION).then(async (cache) => {
     const hit = await cache.match(req, { ignoreSearch: true });
-    const fresh = fetch(req).then((res) => { if (res.ok) cache.put(req, res.clone()); return res; }).catch(() => null);
+    const fresh = fetch(req).then((res) => { if (res.status === 200) cache.put(req, res.clone()); return res; }).catch(() => null);
     return hit || (await fresh) || cache.match('index.html');
   }));
 });

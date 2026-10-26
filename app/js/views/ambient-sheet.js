@@ -5,10 +5,12 @@ import { icons } from '../icons.js';
 import { ambient } from '../ambient.js';
 import { settings } from '../settings.js';
 
-const ICON = { rain: icons.drop, fire: icons.flame, ocean: icons.waves, brown: icons.noise, lofi: icons.music, bossa: icons.music };
+const ICON = { rain: icons.drop, fire: icons.flame, ocean: icons.waves, pink: icons.noise, lofi: icons.music, bossa: icons.music };
 
 export function openAmbientSheet() {
-  sheet(({ el }) => {
+  const offs = [];
+  sheet(() => {
+    const credits = h('div', { class: 'small muted', style: { marginTop: '8px', lineHeight: 1.4 } });
     const nature = h('div', { class: 'list' });
     const music = h('div', { class: 'list' });
     const yours = h('div', { class: 'list' });
@@ -21,10 +23,19 @@ export function openAmbientSheet() {
         sliderRow.hidden = !on;
         try { await ambient.toggle(item.id, on); } catch (e) { toast(e.message, { bad: true }); }
       });
+      const sub = h('div', { class: 'sub' });
+      if (item.tracks) {
+        const drawSub = () => {
+          const t = ambient.nowPlaying(item.id);
+          sub.textContent = t ? `Now: ${t.title} · ${t.artist}` : `${item.tracks.length} songs, shuffled`;
+        };
+        drawSub();
+        offs.push(ambient.onChange(drawSub));
+      }
       return h('div', {},
         h('div', { class: 'list-row' },
           svg(ICON[item.id] || icons.music),
-          h('span', { class: 'grow' }, item.name),
+          h('span', { class: 'grow' }, h('div', {}, item.name), sub),
           removable ? h('button', { class: 'icon-btn', style: { width: '34px', height: '34px' }, 'aria-label': `Remove ${item.name}`,
             onclick: async () => { await ambient.removeCustom(item.id); draw(); } }, svg(icons.trash)) : null,
           toggle),
@@ -43,7 +54,9 @@ export function openAmbientSheet() {
     async function draw() {
       const all = await ambient.builtIns();
       nature.replaceChildren(...all.filter((s) => s.kind === 'nature').map((s) => row(s)));
-      music.replaceChildren(...all.filter((s) => s.kind === 'music').map((s) => row(s)));
+      const stations = all.filter((s) => s.kind === 'music');
+      music.replaceChildren(...stations.map((s) => row(s)));
+      credits.replaceChildren(...stations.map((s) => h('div', {}, s.credit)));
       const mine = await ambient.customs();
       yours.replaceChildren(...mine.map((s) => row(s, true)),
         h('label', { class: 'list-row', style: { cursor: 'pointer' } }, fileInput, svg(icons.plus),
@@ -53,14 +66,14 @@ export function openAmbientSheet() {
 
     return [
       h('h2', {}, 'Background sounds'),
-      h('p', { class: 'lead' }, 'Play softly under the book. Mix as many as you like and set each one’s volume.'),
+      h('p', { class: 'lead' }, 'Play softly under the book. Mix as many as you like and set each one’s volume. Music stations shuffle their songs and fade from one into the next.'),
       h('h3', {}, 'Nature'), nature,
-      h('h3', {}, 'Music'), music,
+      h('h3', {}, 'Music'), music, credits,
       h('h3', {}, 'Your sounds'), yours,
       h('div', { class: 'list', style: { marginTop: '18px' } },
         h('div', { class: 'list-row' },
           h('span', { class: 'grow' }, h('div', {}, 'Pause with the book'), h('div', { class: 'sub' }, 'Sounds stop when the book stops')),
           switchEl(settings.get('ambientFollow') !== false, (v) => settings.set({ ambientFollow: v })))),
     ];
-  });
+  }, { onClose: () => offs.forEach((off) => off()) });
 }

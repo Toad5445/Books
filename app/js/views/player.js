@@ -446,6 +446,7 @@ export async function renderPlayer(root, id) {
   drawSpeed();
   drawSleep();
   drawSounds();
+  ambient.builtIns().then(drawSounds);
   drawPlay();
   await mountReader();
   tick(true);
