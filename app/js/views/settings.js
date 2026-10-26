@@ -8,6 +8,7 @@ import { GitHub } from '../github.js';
 import { pc } from '../pc.js';
 import { voiceById } from '../voices.js';
 import { openVoicePicker } from './voice-picker.js';
+import { isLocked, setLocked } from '../rotation.js';
 
 export function openSettings({ focus } = {}) {
   const s = sheet(({ close }) => {
@@ -85,6 +86,10 @@ export function openSettings({ focus } = {}) {
         h('div', { class: 'list-row', style: { display: 'block' } },
           h('div', { style: { marginBottom: '8px' } }, 'Highlight while reading'),
           segmented([['off', 'Off'], ['sentence', 'Sentence'], ['word', 'Word']], settings.get('highlight'), (v) => settings.set({ highlight: v }))),
+        h('div', { class: 'list-row' }, h('span', { class: 'grow' }, h('div', {}, 'Focus mode'), h('div', { class: 'sub' }, 'Controls fade away while you read. Tap to bring them back.')),
+          switchEl(settings.get('focusMode'), (v) => settings.set({ focusMode: v }))),
+        h('div', { class: 'list-row' }, h('span', { class: 'grow' }, h('div', {}, 'Lock rotation'), h('div', { class: 'sub' }, 'Keep the app the way it is now when you turn your phone')),
+          switchEl(isLocked(), (v) => setLocked(v))),
         h('div', { class: 'list-row' }, h('span', { class: 'grow' }, h('div', {}, 'Follow along'), h('div', { class: 'sub' }, 'Keep the current sentence in view')),
           switchEl(settings.get('follow'), (v) => settings.set({ follow: v }))),
         h('div', { class: 'list-row', style: { display: 'block' } },

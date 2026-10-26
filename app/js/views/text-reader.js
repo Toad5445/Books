@@ -1,5 +1,7 @@
 // Shows the book's extracted text, page by page, with sentence/word highlighting.
 
+import { rect } from '../rotation.js';
+
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 export function createTextReader(container, manifest, { onSeek, font }) {
@@ -99,16 +101,16 @@ export function createTextReader(container, manifest, { onSeek, font }) {
     scrollTo(i, smooth = true) {
       const el = spanFor(i);
       if (!el) return;
-      const box = el.getBoundingClientRect();
-      const cbox = container.getBoundingClientRect();
+      const box = rect(el);
+      const cbox = rect(container);
       const y = container.scrollTop + box.top - cbox.top - container.clientHeight * 0.35;
       container.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' });
     },
     isVisible(i) {
       const el = spanFor(i);
       if (!el) return true;
-      const box = el.getBoundingClientRect();
-      const cbox = container.getBoundingClientRect();
+      const box = rect(el);
+      const cbox = rect(container);
       return box.bottom > cbox.top + 40 && box.top < cbox.bottom - 40;
     },
     destroy() {},

@@ -1,6 +1,7 @@
 // Shows the original PDF pages and highlights the sentence being read.
 
 import { loadPdfJs } from '../bookinfo.js';
+import { point, rect } from '../rotation.js';
 
 const MAX_CANVASES = 8; // iOS limits total canvas memory, so far-away pages are released
 
@@ -85,9 +86,10 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek 
     const wrap = e.target.closest('.pdf-page');
     if (!wrap) return;
     const p = Number(wrap.dataset.p);
-    const box = wrap.getBoundingClientRect();
-    const x = (e.clientX - box.left) / box.width;
-    const y = (e.clientY - box.top) / box.height;
+    const box = rect(wrap);
+    const at = point(e.clientX, e.clientY);
+    const x = (at.x - box.left) / box.width;
+    const y = (at.y - box.top) / box.height;
     let best = null;
     let bestDist = 0.03;
     for (const i of byPage.get(p) || []) {

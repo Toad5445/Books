@@ -11,6 +11,7 @@ import { createPdfReader } from './pdf-reader.js';
 import { openVoicePicker } from './voice-picker.js';
 import { sample } from './book-sheet.js';
 import { ambient } from '../ambient.js';
+import { point, rect, isLocked, setLocked } from '../rotation.js';
 import { openAmbientSheet } from './ambient-sheet.js';
 
 const audio = document.getElementById('audio');
@@ -140,7 +141,34 @@ export async function renderPlayer(root, id) {
     h('div', { class: 'times' }, tNow, tLeft),
     h('div', { class: 'transport' }, speedBtn, backBtn, playBtn, fwdBtn, chapBtn));
 
-  root.replaceChildren(h('div', { class: 'player-page' }, top, h('div', { class: 'reader-wrap' }, readerBox, followPill, darkBtn), controls));
+  const page = h('div', { class: 'player-page' }, top, h('div', { class: 'reader-wrap' }, readerBox, followPill, darkBtn), controls);
+  root.replaceChildren(page);
+
+  // Focus mode: the controls fade away while you read and come back with a tap.
+  // Scrolling doesn't bring them back (a scroll never produces a click).
+  let hideTimer = 0;
+  const setUiHidden = (hidden) => page.classList.toggle('ui-hidden', hidden);
+  const scheduleHide = () => {
+    clearTimeout(hideTimer);
+    if (settings.get('focusMode')) hideTimer = setTimeout(() => setUiHidden(true), 3500);
+  };
+  const applyFocus = () => {
+    const on = !!settings.get('focusMode');
+    page.classList.toggle('focus', on);
+    if (!on) { clearTimeout(hideTimer); setUiHidden(false); } else scheduleHide();
+  };
+  readerBox.addEventListener('click', (e) => {
+    if (!settings.get('focusMode')) return;
+    if (page.classList.contains('ui-hidden')) {
+      e.stopPropagation(); // this tap only brings the controls back
+      setUiHidden(false);
+      scheduleHide();
+    } else if (!e.target.closest('.s')) {
+      clearTimeout(hideTimer);
+      setUiHidden(true);
+    } else scheduleHide();
+  }, true);
+  for (const el of [top, controls]) el.addEventListener('pointerdown', scheduleHide);
 
   // ------------------------------------------------------------ reader
 
@@ -235,15 +263,15 @@ export async function renderPlayer(root, id) {
 
   // Scrubbing: drag along the timeline to see the page and chapter you'd land on.
   const posFromEvent = (e) => {
-    const box = scrub.getBoundingClientRect();
-    return Math.max(0, Math.min(1, (e.clientX - box.left) / box.width)) * duration;
+    const box = rect(scrub);
+    return Math.max(0, Math.min(1, (point(e.clientX, e.clientY).x - box.left) / box.width)) * duration;
   };
   const showBubble = (t, x) => {
     const i = segAt(t);
     const ch = chapterAt(i);
     bubble.hidden = false;
     bubble.replaceChildren(`Page ${pageLabel(segs[i]?.p ?? 0)} · ${fmtTime(t)}`, ch ? h('small', {}, ch.title) : '');
-    const box = scrub.getBoundingClientRect();
+    const box = rect(scrub);
     const half = bubble.offsetWidth / 2;
     bubble.style.left = `${Math.max(half, Math.min(box.width - half, x))}px`;
   };
@@ -251,13 +279,13 @@ export async function renderPlayer(root, id) {
     scrub.setPointerCapture(e.pointerId);
     scrub.classList.add('drag');
     dragging = posFromEvent(e);
-    showBubble(dragging, e.clientX - scrub.getBoundingClientRect().left);
+    showBubble(dragging, point(e.clientX, e.clientY).x - rect(scrub).left);
     tick();
   });
   scrub.addEventListener('pointermove', (e) => {
     if (dragging == null) return;
     dragging = posFromEvent(e);
-    showBubble(dragging, e.clientX - scrub.getBoundingClientRect().left);
+    showBubble(dragging, point(e.clientX, e.clientY).x - rect(scrub).left);
     tick();
   });
   const endDrag = () => {
@@ -425,6 +453,8 @@ export async function renderPlayer(root, id) {
           row(icons.page, 'Go to page', null, openGoTo),
           view === 'page' ? row(icons.contrast, pdfDark() ? 'Light pages' : 'Dark pages', 'Invert the original pages', () => settings.set({ pdfDark: !pdfDark() })) : null,
           row(icons.moon, 'Sleep timer', null, openSleep),
+          row(icons.eye, settings.get('focusMode') ? 'Turn off focus mode' : 'Focus mode', 'Controls fade away while you read. Tap to bring them back.', () => settings.set({ focusMode: !settings.get('focusMode') })),
+          row(icons.lock, isLocked() ? 'Unlock rotation' : 'Lock rotation', isLocked() ? 'The app turns with your phone again' : 'Keep the app the way it is now when you turn your phone', () => setLocked(!isLocked())),
           row(icons.waves, 'Background sounds', 'Rain, fire, lofi and more', openAmbientSheet),
           row(icons.settings, 'Display and highlighting', null, openDisplay)),
       ];
@@ -436,6 +466,7 @@ export async function renderPlayer(root, id) {
   }
 
   const offSettings = settings.onChange((patch) => {
+    if ('focusMode' in patch) applyFocus();
     if ('highlight' in patch) reader?.setMode(patch.highlight);
     if ('pdfDark' in patch || 'theme' in patch) reader?.setDark(pdfDark());
     if ('readerFont' in patch) reader?.setFont(patch.readerFont);
@@ -447,6 +478,7 @@ export async function renderPlayer(root, id) {
   drawSleep();
   drawSounds();
   ambient.builtIns().then(drawSounds);
+  applyFocus();
   drawPlay();
   await mountReader();
   tick(true);
@@ -463,6 +495,7 @@ export async function renderPlayer(root, id) {
     document.removeEventListener('visibilitychange', onHide);
     offSettings();
     offAmbient();
+    clearTimeout(hideTimer);
     saveProgress();
     reader?.destroy();
   };

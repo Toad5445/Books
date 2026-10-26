@@ -15,7 +15,9 @@ const defaults = {
   defaultVoice: 'af_heart',
   ambient: {},             // background sound id -> volume 0..1
   ambientFollow: true,      // background sounds pause with the book
-  pdfDark: null,            // original PDF pages inverted: null = follow the theme
+  pdfDark: null,
+  focusMode: false,         // player controls fade away while reading
+  rotationLock: null,       // orientation angle the app is locked to, or null            // original PDF pages inverted: null = follow the theme
   repo: '',
   token: '',
 };

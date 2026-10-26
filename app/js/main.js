@@ -5,6 +5,7 @@ import { library } from './library.js';
 import { pc } from './pc.js';
 import { renderShelf } from './views/shelf.js';
 import { renderPlayer, nowPlaying } from './views/player.js';
+import { apply as applyRotation } from './rotation.js';
 
 const app = document.getElementById('app');
 const audio = document.getElementById('audio');
@@ -46,6 +47,7 @@ audio.addEventListener('pause', drawMiniPlayer);
 async function start() {
   applyTheme();
   applyReaderSize();
+  applyRotation();
   await library.init();
   await library.loadProgressCache();
 

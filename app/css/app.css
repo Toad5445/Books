@@ -382,3 +382,16 @@ code { font-size: .9em; background: var(--surface-2); padding: 1px 5px; border-r
 ol.steps { padding-left: 20px; margin: 6px 0; font-size: 14.5px; }
 ol.steps li { margin: 6px 0; }
 a { color: var(--accent); }
+
+/* ------------------------------------------------------------ focus mode */
+
+/* The reader fills the screen; the bars float over it and fade away. */
+.player-page.focus .reader-wrap { position: absolute; inset: 0; }
+.player-page.focus .topbar { position: absolute; left: 0; right: 0; top: 0; z-index: 6; background: color-mix(in srgb, var(--bg) 94%, transparent); }
+.player-page.focus .controls { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; }
+.player-page.focus .topbar, .player-page.focus .controls, .player-page.focus .follow-pill, .player-page.focus .page-dark-btn { transition: opacity .45s ease; }
+.player-page.focus.ui-hidden .topbar, .player-page.focus.ui-hidden .controls,
+.player-page.focus.ui-hidden .follow-pill, .player-page.focus.ui-hidden .page-dark-btn { opacity: 0; pointer-events: none; }
+.player-page.focus .text-reader { padding-top: calc(var(--safe-top) + 70px); padding-bottom: calc(var(--safe-bottom) + 210px); }
+.player-page.focus .pdf-reader { padding-top: calc(var(--safe-top) + 64px); padding-bottom: calc(var(--safe-bottom) + 200px); }
+.player-page.focus .page-dark-btn { top: calc(var(--safe-top) + 70px); }

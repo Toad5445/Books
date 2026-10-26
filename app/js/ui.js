@@ -1,5 +1,7 @@
 // Small DOM helpers shared by every view.
 
+import { point } from './rotation.js';
+
 export function h(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs || {})) {
@@ -53,15 +55,16 @@ export function sheet(build, { onClose } = {}) {
 
   // Swipe down on the grab handle area to close.
   let startY = null;
-  panel.addEventListener('touchstart', (e) => { if (panel.scrollTop <= 0) startY = e.touches[0].clientY; }, { passive: true });
+  const touchY = (t) => point(t.clientX, t.clientY).y;
+  panel.addEventListener('touchstart', (e) => { if (panel.scrollTop <= 0) startY = touchY(e.touches[0]); }, { passive: true });
   panel.addEventListener('touchmove', (e) => {
     if (startY == null) return;
-    const dy = e.touches[0].clientY - startY;
+    const dy = touchY(e.touches[0]) - startY;
     if (dy > 0 && panel.scrollTop <= 0) panel.style.transform = `translateY(${dy}px)`;
   }, { passive: true });
   panel.addEventListener('touchend', (e) => {
     if (startY == null) return;
-    const dy = e.changedTouches[0].clientY - startY;
+    const dy = touchY(e.changedTouches[0]) - startY;
     panel.style.transform = '';
     startY = null;
     if (dy > 110) close();
