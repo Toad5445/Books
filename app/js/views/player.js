@@ -225,17 +225,20 @@ export async function renderPlayer(root, id) {
     const t = dragging != null ? dragging : audio.currentTime;
     const i = segAt(audio.currentTime);
     if (i !== current || force) {
-      const changed = i !== current;
       current = i;
       reader?.setActive(i);
-      if (settings.get('follow') && reader) {
-        const userRecently = Date.now() - userScrolledAt < 8000;
-        if (!userRecently && (changed || force) && !reader.isVisible(i)) { programmaticScroll = Date.now(); reader.scrollTo(i); }
-        else if (!userRecently && changed && view === 'text') { /* already visible */ }
-        followPill.hidden = !userRecently || reader.isVisible(i);
-      }
     }
     reader?.setTime(audio.currentTime);
+    // Follow along: as soon as the line being read moves into the lower part of
+    // the screen (or above it), scroll it back up to about a third of the way down.
+    if (settings.get('follow') && reader) {
+      const userRecently = Date.now() - userScrolledAt < 8000;
+      if (!userRecently && (force || Date.now() - programmaticScroll > 700) && reader.offscreen()) {
+        programmaticScroll = Date.now();
+        reader.scrollTo(current);
+      }
+      followPill.hidden = !userRecently || !reader.offscreen(true);
+    }
     const frac = duration ? t / duration : 0;
     track.firstChild.style.width = `${frac * 100}%`;
     knob.style.left = `${frac * 100}%`;

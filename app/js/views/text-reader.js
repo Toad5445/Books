@@ -62,6 +62,8 @@ export function createTextReader(container, manifest, { onSeek, font }) {
     if (el) onSeek(Number(el.dataset.i));
   });
 
+  const focusEl = () => (wordEls && wordEls[Math.max(activeWord, 0)]) || activeEl || (active >= 0 ? spanFor(active) : null);
+
   function clear() {
     if (activeEl) {
       activeEl.classList.remove('hl');
@@ -80,12 +82,14 @@ export function createTextReader(container, manifest, { onSeek, font }) {
       if (i === active) return;
       clear();
       active = i;
-      if (i < 0 || mode === 'off') return;
+      if (i < 0) return;
       activeEl = spanFor(i);
       if (!activeEl) return;
-      activeEl.classList.add('hl');
+      if (mode !== 'off') activeEl.classList.add('hl');
       const s = segs[i];
-      if (mode === 'word' && s.w?.length) {
+      // Words get their own spans even without word highlighting, so scrolling
+      // can follow the exact line being read inside long sentences.
+      if (s.w?.length) {
         const parts = [];
         let pos = 0;
         s.w.forEach(([cs, ce], k) => {
@@ -105,26 +109,30 @@ export function createTextReader(container, manifest, { onSeek, font }) {
       for (let j = 0; j < w.length; j++) { if (w[j][2] <= t + 0.03) k = j; else break; }
       if (k !== activeWord) {
         wordEls[activeWord]?.classList.remove('hl');
-        wordEls[k]?.classList.add('hl');
+        if (mode === 'word') wordEls[k]?.classList.add('hl');
         activeWord = k;
       }
+    },
+    /** True when the line being read has drifted out of the comfortable reading zone
+     *  (upper ~70% of the screen), or with strict=true, right off the screen. */
+    offscreen(strict = false) {
+      const el = focusEl();
+      if (!el) return false;
+      const box = rect(el);
+      const cbox = rect(container);
+      const h = cbox.bottom - cbox.top;
+      if (strict) return box.bottom < cbox.top + 20 || box.top > cbox.bottom - 20;
+      return box.top < cbox.top + h * 0.06 || box.bottom > cbox.top + h * 0.7;
     },
     /** Element to keep in view for segment i. */
     target(i) { return spanFor(i); },
     scrollTo(i, smooth = true) {
-      const el = spanFor(i);
+      const el = i === active ? focusEl() : spanFor(i);
       if (!el) return;
       const box = rect(el);
       const cbox = rect(container);
-      const y = container.scrollTop + box.top - cbox.top - container.clientHeight * 0.35;
+      const y = container.scrollTop + box.top - cbox.top - container.clientHeight * 0.3;
       container.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' });
-    },
-    isVisible(i) {
-      const el = spanFor(i);
-      if (!el) return true;
-      const box = rect(el);
-      const cbox = rect(container);
-      return box.bottom > cbox.top + 40 && box.top < cbox.bottom - 40;
     },
     destroy() {},
   };

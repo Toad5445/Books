@@ -155,6 +155,7 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek 
   });
 
   let active = -1;
+  let line = 0; // which line of the active sentence is being read (estimated from time)
   let mode = 'sentence';
   let marks = [];
 
@@ -176,10 +177,10 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek 
     }
   };
 
-  function anchor(i) {
+  function anchor(i, k = 0) {
     const s = segs[i];
     if (!s) return null;
-    const r = s.r?.[0];
+    const r = s.r?.[Math.min(k, (s.r?.length || 1) - 1)];
     const wrap = wrappers[r ? r[0] : s.p];
     if (!wrap) return null;
     return { wrap, y: r ? (r[2] + r[4]) / 2 : 0.1 };
@@ -189,21 +190,35 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek 
     setMode(m) { mode = m; draw(); },
     setDark(on) { root.classList.toggle('dark', on); },
     setFont() {},
-    setActive(i) { if (i !== active) { active = i; draw(); } },
-    setTime() {},
+    setActive(i) { if (i !== active) { active = i; line = 0; draw(); } },
+    setTime(t) {
+      // Spread the sentence's time over its lines by their length.
+      const s = segs[active];
+      if (!s?.r?.length) return;
+      const widths = s.r.map((r) => Math.max(0.001, r[3] - r[1]));
+      const total = widths.reduce((a, b) => a + b, 0);
+      let at = Math.max(0, Math.min(1, (t - s.a) / Math.max(0.01, s.b - s.a))) * total;
+      let k = 0;
+      while (k < widths.length - 1 && at > widths[k]) { at -= widths[k]; k++; }
+      line = k;
+    },
+    offscreen(strict = false) {
+      const a = anchor(active, line);
+      if (!a) return false;
+      const y = a.wrap.offsetTop + a.wrap.offsetHeight * a.y - container.scrollTop;
+      const h = container.clientHeight;
+      if (strict) return y < 0 || y > h;
+      return y < h * 0.06 || y > h * 0.7;
+    },
     scrollTo(i, smooth = true) {
-      const a = anchor(i);
+      const k = i === active ? line : 0;
+      const a = anchor(i, k);
       if (!a) return;
-      const top = a.wrap.offsetTop + a.wrap.offsetHeight * a.y - container.clientHeight * 0.4;
-      const x = segs[i]?.r?.[0] ? (segs[i].r[0][1] + segs[i].r[0][3]) / 2 : 0.5;
+      const top = a.wrap.offsetTop + a.wrap.offsetHeight * a.y - container.clientHeight * 0.3;
+      const r = segs[i]?.r?.[Math.min(k, (segs[i]?.r?.length || 1) - 1)];
+      const x = r ? (r[1] + r[3]) / 2 : 0.5;
       const left = zoom > 1.01 ? a.wrap.offsetLeft + a.wrap.offsetWidth * x - container.clientWidth / 2 : container.scrollLeft;
       container.scrollTo({ top: Math.max(0, top), left: Math.max(0, left), behavior: smooth ? 'smooth' : 'auto' });
-    },
-    isVisible(i) {
-      const a = anchor(i);
-      if (!a) return true;
-      const y = a.wrap.offsetTop + a.wrap.offsetHeight * a.y - container.scrollTop;
-      return y > 40 && y < container.clientHeight - 40;
     },
     destroy() {
       io.disconnect();
