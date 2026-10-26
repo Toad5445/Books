@@ -305,7 +305,6 @@ svg { display: block; }
 
 .text-reader { max-width: 680px; margin: 0 auto; padding: 8px 22px 40px; font-family: var(--font-read); font-size: var(--reader-size); line-height: 1.62; }
 .text-reader.sans { font-family: var(--font-ui); }
-.text-reader .page { content-visibility: auto; contain-intrinsic-size: auto 900px; }
 .text-reader .pnum { font: 600 11px/1 var(--font-ui); letter-spacing: .08em; color: var(--muted); text-align: center; margin: 26px 0 16px; display: flex; align-items: center; gap: 12px; }
 .text-reader .pnum::before, .text-reader .pnum::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .text-reader p { margin: 0 0 .9em; }

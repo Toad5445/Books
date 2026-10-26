@@ -218,9 +218,15 @@ export async function renderPlayer(root, id) {
     requestAnimationFrame(() => reader?.scrollTo(current, false));
   }
 
-  const markUserScroll = () => { if (Date.now() - programmaticScroll > 700) userScrolledAt = Date.now(); };
-  readerBox.addEventListener('touchmove', markUserScroll, { passive: true });
-  readerBox.addEventListener('wheel', markUserScroll, { passive: true });
+  // Only a real drag that actually moves the text counts as "I'm scrolling myself";
+  // a tap or a finger resting on the screen doesn't pause following.
+  let touchStartTop = null;
+  readerBox.addEventListener('touchstart', () => { touchStartTop = readerBox.scrollTop; }, { passive: true });
+  readerBox.addEventListener('touchend', () => { touchStartTop = null; }, { passive: true });
+  readerBox.addEventListener('scroll', () => {
+    if (touchStartTop != null && Math.abs(readerBox.scrollTop - touchStartTop) > 12) userScrolledAt = Date.now();
+  }, { passive: true });
+  readerBox.addEventListener('wheel', () => { if (Date.now() - programmaticScroll > 700) userScrolledAt = Date.now(); }, { passive: true });
 
   // ------------------------------------------------------------ playback
 
@@ -245,7 +251,7 @@ export async function renderPlayer(root, id) {
     // Follow along: as soon as the line being read moves into the lower part of
     // the screen (or above it), scroll it back up to about a third of the way down.
     if (settings.get('follow') && reader) {
-      const userRecently = Date.now() - userScrolledAt < 8000;
+      const userRecently = Date.now() - userScrolledAt < 6000;
       if (!userRecently && (force || Date.now() - programmaticScroll > 700) && reader.offscreen()) {
         programmaticScroll = Date.now();
         reader.scrollTo(current);

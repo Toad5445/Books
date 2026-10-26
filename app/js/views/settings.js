@@ -9,6 +9,7 @@ import { pc } from '../pc.js';
 import { voiceById } from '../voices.js';
 import { openVoicePicker } from './voice-picker.js';
 import { isLocked, setLocked } from '../rotation.js';
+import { VERSION } from '../version.js';
 
 export function openSettings({ focus } = {}) {
   const s = sheet(({ close }) => {
@@ -121,7 +122,7 @@ export function openSettings({ focus } = {}) {
           close();
         } }, svg(icons.trash), h('span', { class: 'grow' }, 'Remove all downloads'))),
 
-      h('p', { class: 'small muted', style: { textAlign: 'center', marginTop: '24px' } }, 'Books · voices by Kokoro'),
+      h('p', { class: 'small muted', style: { textAlign: 'center', marginTop: '24px' } }, `Books · version ${VERSION} · voices by Kokoro`),
     ];
     if (focus === 'library') setTimeout(() => libSection.scrollIntoView({ block: 'start', behavior: 'smooth' }), 350);
     return out;
