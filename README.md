@@ -22,6 +22,7 @@ timeline linked to the book's pages.
 - A timeline linked to pages: drag it to see "Page 142 · Chapter 9", or tap a page number to jump there
 - Read along in the extracted text or the original PDF pages, with optional sentence or word highlighting
 - A bookshelf with covers, progress, and a queue showing which books still need converting
+- Background sounds under the book (rain, fireplace, ocean, brown noise, lofi, bossa nova guitar, or your own songs), each with its own volume
 - Sleep timer, lock-screen controls, offline listening
 - Themes: Light, Paper, Forest, Dark, Dusk, Black (OLED), or Auto
 
@@ -90,6 +91,7 @@ While listening:
 - **Text / Page:** the switch at the top flips between extracted text and the original PDF pages. Tap any sentence to jump there.
 - **Change voice:** **⋯ → Change voice from here.** Your PC re-records from that point onwards. Keep listening to the current audio meanwhile; when it's done the book shows **New audio ready**.
 - **Sleep timer:** the moon icon.
+- **Background sounds:** the wave icon next to it. Switch on as many as you like and set each one's volume, or add your own song from the Files app.
 - **Highlighting, theme, text size:** the gear (or **⋯ → Display and highlighting**).
 
 ---
@@ -117,6 +119,8 @@ While listening:
 |---|---|---|
 | `app/` | GitHub Pages | The installable web app (no build step). It talks to your library through the GitHub API. Uses pdf.js for the Page view and [kokoro-js](https://www.npmjs.com/package/kokoro-js) for on-phone previews. |
 | `converter/` | Your PC | `server.py` (local web server and queue), `extract.py` (PDF/EPUB text, page positions, OCR with RapidOCR), `synth.py` (Kokoro and AAC audio), `convert.py` (the pipeline), `store.py` (library access). |
+
+The background sounds in `app/sounds/` are generated from scratch by `tools/make_sounds.py`, so there are no licensing questions.
 
 The library repo layout is `books/<id>/book.json` (status and voice), `source.pdf|epub`, `manifest.json` (every sentence with its page, its position on the page and word timings), `cover.jpg`, and `voices/*.m4a` samples.
 Audio lives on a branch per book (`audio/<id>`), so deleting a book really frees the space.

@@ -10,6 +10,8 @@ import { createTextReader } from './text-reader.js';
 import { createPdfReader } from './pdf-reader.js';
 import { openVoicePicker } from './voice-picker.js';
 import { sample } from './book-sheet.js';
+import { ambient } from '../ambient.js';
+import { openAmbientSheet } from './ambient-sheet.js';
 
 const audio = document.getElementById('audio');
 let session = null; // what's loaded in the audio element: { id, url, manifest, book }
@@ -102,6 +104,12 @@ export async function renderPlayer(root, id) {
     h('button', { class: 'icon-btn', 'aria-label': 'More', onclick: openMenu }, svg(icons.more)));
 
   const whereBtn = h('button', { class: 'ellipsis', onclick: openGoTo });
+  const soundsBtn = h('button', { class: 'muted', 'aria-label': 'Background sounds', style: { display: 'flex' }, onclick: openAmbientSheet });
+  const drawSounds = () => {
+    soundsBtn.replaceChildren(svg(icons.waves.replace('<svg', '<svg width="17" height="17"')));
+    soundsBtn.style.color = ambient.anyOn() ? 'var(--accent)' : '';
+  };
+  const offAmbient = ambient.onChange(drawSounds);
   const sleepBtn = h('button', { class: 'muted', style: { fontWeight: 600, display: 'flex', gap: '4px', alignItems: 'center' }, onclick: openSleep });
   const scrub = h('div', { class: 'scrub' });
   const track = h('div', { class: 'track' }, h('div', { class: 'fill' }));
@@ -123,7 +131,7 @@ export async function renderPlayer(root, id) {
   const chapBtn = h('button', { class: 'side', 'aria-label': 'Chapters and pages', onclick: openChapters }, svg(icons.list));
 
   const controls = h('div', { class: 'controls' },
-    h('div', { class: 'where' }, whereBtn, sleepBtn),
+    h('div', { class: 'where' }, whereBtn, h('div', { style: { display: 'flex', gap: '14px', alignItems: 'center', flex: 'none' } }, soundsBtn, sleepBtn)),
     scrub,
     h('div', { class: 'times' }, tNow, tLeft),
     h('div', { class: 'transport' }, speedBtn, backBtn, playBtn, fwdBtn, chapBtn));
@@ -409,6 +417,7 @@ export async function renderPlayer(root, id) {
           row(icons.list, 'Chapters', null, openChapters),
           row(icons.page, 'Go to page', null, openGoTo),
           row(icons.moon, 'Sleep timer', null, openSleep),
+          row(icons.waves, 'Background sounds', 'Rain, fire, lofi and more', openAmbientSheet),
           row(icons.settings, 'Display and highlighting', null, openDisplay)),
       ];
     });
@@ -427,6 +436,7 @@ export async function renderPlayer(root, id) {
 
   drawSpeed();
   drawSleep();
+  drawSounds();
   drawPlay();
   await mountReader();
   tick(true);
@@ -442,6 +452,7 @@ export async function renderPlayer(root, id) {
     audio.removeEventListener('ended', onPause);
     document.removeEventListener('visibilitychange', onHide);
     offSettings();
+    offAmbient();
     saveProgress();
     reader?.destroy();
   };

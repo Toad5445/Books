@@ -1,0 +1,44 @@
+[
+ {
+  "id": "rain",
+  "name": "Rain",
+  "kind": "nature",
+  "file": "sounds/rain.m4a",
+  "loop": 60.0
+ },
+ {
+  "id": "fire",
+  "name": "Fireplace",
+  "kind": "nature",
+  "file": "sounds/fire.m4a",
+  "loop": 60.0
+ },
+ {
+  "id": "ocean",
+  "name": "Ocean waves",
+  "kind": "nature",
+  "file": "sounds/ocean.m4a",
+  "loop": 64.0
+ },
+ {
+  "id": "brown",
+  "name": "Brown noise",
+  "kind": "nature",
+  "file": "sounds/brown.m4a",
+  "loop": 60.0
+ },
+ {
+  "id": "lofi",
+  "name": "Lofi beats",
+  "kind": "music",
+  "file": "sounds/lofi.m4a",
+  "loop": 103.7838
+ },
+ {
+  "id": "bossa",
+  "name": "Bossa nova guitar",
+  "kind": "music",
+  "file": "sounds/bossa.m4a",
+  "loop": 58.1818
+ }
+]

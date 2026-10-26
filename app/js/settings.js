@@ -13,6 +13,8 @@ const defaults = {
   skipBack: 15,
   skipForward: 30,
   defaultVoice: 'af_heart',
+  ambient: {},             // background sound id -> volume 0..1
+  ambientFollow: true,      // background sounds pause with the book
   repo: '',
   token: '',
 };
