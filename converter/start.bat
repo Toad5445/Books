@@ -6,5 +6,7 @@ if not exist .venv\Scripts\python.exe (
   pause
   exit /b 1
 )
+echo  Checking for updates...
+.venv\Scripts\python.exe update.py
 .venv\Scripts\python.exe server.py
 pause
