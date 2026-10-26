@@ -141,7 +141,7 @@ export function createTextReader(container, manifest, { onSeek, font, insets = (
       let anchor = rect(sentence).top;
       if (i === active) {
         const line = rect(focusEl());
-        if (line.bottom - anchor > (bottom - top) * 0.6) anchor = line.top;
+        if (line.bottom - anchor > (bottom - top) * 0.9) anchor = line.top; // sentence taller than the screen
       }
       const y = container.scrollTop + anchor - top;
       container.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' });

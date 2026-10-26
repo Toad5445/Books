@@ -230,7 +230,7 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek,
       if (y == null) return;
       if (i === active && line > 0) {
         const cur = lineTop(i, line);
-        if (cur - y > room * 0.6) { y = cur; k = line; }
+        if (cur - y > room * 0.85) { y = cur; k = line; }
       }
       const top = y - ins.top - 6;
       const r = segs[i]?.r?.[Math.min(k, (segs[i]?.r?.length || 1) - 1)];

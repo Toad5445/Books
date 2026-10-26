@@ -279,6 +279,14 @@ export async function renderPlayer(root, id) {
       if (!userRecently && (force || Date.now() - programmaticScroll > 700) && reader.offscreen()) {
         programmaticScroll = Date.now();
         reader.scrollTo(current);
+        // iPhones sometimes stop a smooth scroll short; check, then finish the move.
+        const settle = programmaticScroll;
+        const target = current;
+        setTimeout(() => {
+          if (programmaticScroll !== settle || Date.now() - userScrolledAt < 6000 || !reader) return;
+          programmaticScroll = Date.now();
+          reader.scrollTo(target, false);
+        }, 650);
       }
       followPill.hidden = !userRecently || !reader.offscreen(true);
     }
