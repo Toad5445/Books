@@ -251,8 +251,26 @@ class Handler(BaseHTTPRequestHandler):
         self._send(200, data, ctype)
 
 
+def disable_quick_edit():
+    """Clicking inside a Windows console window starts a text selection that
+    freezes the program until Esc is pressed. Turn that off for this window."""
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(-10)  # standard input
+        mode = ctypes.c_uint32()
+        if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            kernel32.SetConsoleMode(handle, (mode.value & ~0x0040) | 0x0080)  # quick edit off
+    except Exception:
+        pass
+
+
 def main():
     global WORKER
+    disable_quick_edit()
     WORKER = Worker()
     server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     url = f"http://localhost:{PORT}/"
