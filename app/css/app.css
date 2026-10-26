@@ -61,6 +61,8 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; }
+/* Stop iOS from enlarging text when the phone is turned sideways. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   background: var(--bg); color: var(--text);
   font: 16px/1.45 var(--font-ui);
