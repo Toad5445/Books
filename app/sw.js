@@ -1,10 +1,10 @@
 // Offline support: the app shell and libraries are cached so the app opens
 // (and downloaded books play) without a connection. GitHub API calls are never cached.
-const VERSION = 'books-v7';
+const VERSION = 'books-v8';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/main.js', 'js/ui.js', 'js/icons.js', 'js/db.js', 'js/settings.js', 'js/voices.js', 'js/github.js',
-  'js/library.js', 'js/pc.js', 'js/rotation.js', 'js/ambient.js', 'js/views/ambient-sheet.js', 'sounds/index.json', 'js/bookinfo.js', 'js/preview.js', 'js/preview-worker.js',
+  'js/library.js', 'js/pc.js', 'js/rotation.js', 'js/pinch.js', 'js/ambient.js', 'js/views/ambient-sheet.js', 'sounds/index.json', 'js/bookinfo.js', 'js/preview.js', 'js/preview-worker.js',
   'js/views/shelf.js', 'js/views/add.js', 'js/views/voice-picker.js', 'js/views/book-sheet.js',
   'js/views/settings.js', 'js/views/player.js', 'js/views/text-reader.js', 'js/views/pdf-reader.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',

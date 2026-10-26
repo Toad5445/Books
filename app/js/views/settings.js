@@ -24,7 +24,7 @@ export function openSettings({ focus } = {}) {
     drawThemes();
 
     const sizeLabel = h('span', { class: 'muted small' }, `${settings.get('readerSize')} px`);
-    const size = h('input', { type: 'range', class: 'slider', min: 14, max: 28, step: 1, value: settings.get('readerSize'),
+    const size = h('input', { type: 'range', class: 'slider', min: 14, max: 34, step: 1, value: settings.get('readerSize'),
       oninput: (e) => { settings.set({ readerSize: +e.target.value }); sizeLabel.textContent = `${e.target.value} px`; } });
 
     const defVoiceRow = h('button', { class: 'list-row', onclick: async () => {

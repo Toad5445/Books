@@ -8,6 +8,9 @@ import { renderPlayer, nowPlaying } from './views/player.js';
 import { apply as applyRotation } from './rotation.js';
 
 const app = document.getElementById('app');
+
+// Pinching zooms the pages or text inside the reader, never the whole app.
+for (const type of ['gesturestart', 'gesturechange']) document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
 const audio = document.getElementById('audio');
 let cleanup = null;
 let routeSeq = 0;

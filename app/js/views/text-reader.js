@@ -1,6 +1,8 @@
 // Shows the book's extracted text, page by page, with sentence/word highlighting.
 
 import { rect } from '../rotation.js';
+import { onPinch } from '../pinch.js';
+import { settings } from '../settings.js';
 
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -37,6 +39,17 @@ export function createTextReader(container, manifest, { onSeek, font }) {
   root.innerHTML = html.join('');
   container.replaceChildren(root);
 
+  // Pinch to change the text size, then bring the current sentence back into view.
+  let startSize = 19;
+  onPinch(container, {
+    start() { startSize = settings.get('readerSize'); },
+    move(scale) {
+      const size = Math.max(14, Math.min(34, Math.round(startSize * scale)));
+      if (size !== settings.get('readerSize')) settings.set({ readerSize: size });
+    },
+    end() { if (active >= 0) api.scrollTo(active, false); },
+  });
+
   const spanFor = (i) => root.querySelector(`.s[data-i="${i}"]`);
   let active = -1;
   let activeEl = null;
@@ -59,7 +72,7 @@ export function createTextReader(container, manifest, { onSeek, font }) {
     activeWord = -1;
   }
 
-  return {
+  const api = {
     setMode(m) { mode = m; const a = active; clear(); active = -1; if (a >= 0) this.setActive(a); },
     setDark() {},
     setFont(f) { root.classList.toggle('sans', f === 'sans'); },
@@ -115,4 +128,5 @@ export function createTextReader(container, manifest, { onSeek, font }) {
     },
     destroy() {},
   };
+  return api;
 }

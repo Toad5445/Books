@@ -2,8 +2,11 @@
 
 import { loadPdfJs } from '../bookinfo.js';
 import { point, rect } from '../rotation.js';
+import { onPinch } from '../pinch.js';
 
 const MAX_CANVASES = 8; // iOS limits total canvas memory, so far-away pages are released
+const MAX_PIXELS = 10e6; // per page canvas, also to stay inside iOS limits
+const MAX_ZOOM = 4;
 
 export async function createPdfReader(container, manifest, sourceBlob, { onSeek }) {
   const lib = await loadPdfJs();
@@ -26,6 +29,16 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek 
   }
   container.replaceChildren(root);
 
+  // Zoom: pages are laid out at zoom x the screen width; pinching zooms around your fingers.
+  let zoom = 1;
+  const baseWidth = () => Math.min(container.clientWidth - 20, 900);
+  function layout() {
+    const w = Math.round(baseWidth() * zoom);
+    for (const wrap of wrappers) wrap.style.width = `${w}px`;
+    root.classList.toggle('zoomed', zoom > 1.01);
+  }
+  layout();
+
   // Which segments sit on each page, for tap-to-seek.
   const byPage = new Map();
   segs.forEach((s, i) => (s.r || []).forEach((r) => {
@@ -37,20 +50,23 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek 
   const rendering = new Set();
   const visible = new Set();
 
-  async function render(p) {
-    if (rendered.has(p) || rendering.has(p)) return;
+  async function render(p, fresh = false) {
+    if ((rendered.has(p) && !fresh) || rendering.has(p)) return;
     rendering.add(p);
     try {
       const page = await pdf.getPage(p + 1);
       const wrap = wrappers[p];
       const base = page.getViewport({ scale: 1 });
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const scale = (wrap.clientWidth * dpr) / base.width;
+      let scale = (wrap.clientWidth * Math.min(window.devicePixelRatio || 1, 2)) / base.width;
+      const pixels = base.width * base.height * scale * scale;
+      if (pixels > MAX_PIXELS) scale *= Math.sqrt(MAX_PIXELS / pixels);
       const viewport = page.getViewport({ scale });
       const canvas = document.createElement('canvas');
       canvas.width = Math.floor(viewport.width);
       canvas.height = Math.floor(viewport.height);
       await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      const old = rendered.get(p);
+      if (old) { old.width = old.height = 0; old.remove(); }
       wrap.prepend(canvas);
       rendered.set(p, canvas);
       evict();
@@ -73,6 +89,40 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek 
       rendered.delete(p);
     }
   }
+
+  function setZoom(next, cx, cy) {
+    next = Math.max(1, Math.min(MAX_ZOOM, next));
+    if (next < 1.05) next = 1;
+    if (Math.abs(next - zoom) < 0.01) return;
+    const ratio = next / zoom;
+    const px = container.scrollLeft + cx;
+    const py = container.scrollTop + cy;
+    zoom = next;
+    layout();
+    container.scrollLeft = px * ratio - cx;
+    container.scrollTop = py * ratio - cy;
+    // Re-draw what's on screen sharply at the new size; the rest redraws when scrolled to.
+    for (const p of [...rendered.keys()]) {
+      if (visible.has(p)) render(p, true);
+      else { const c = rendered.get(p); c.width = c.height = 0; c.remove(); rendered.delete(p); }
+    }
+  }
+
+  onPinch(container, {
+    move(scale, start) {
+      const box = rect(container);
+      root.style.transformOrigin = `${container.scrollLeft + start.x - box.left}px ${container.scrollTop + start.y - box.top}px`;
+      root.style.transform = `scale(${Math.max(1 / zoom, Math.min(MAX_ZOOM / zoom, scale))})`;
+    },
+    end(scale, start) {
+      root.style.transform = '';
+      const box = rect(container);
+      setZoom(zoom * scale, start.x - box.left, start.y - box.top);
+    },
+  });
+
+  const onResize = () => { layout(); for (const p of visible) render(p, true); };
+  window.addEventListener('resize', onResize);
 
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
@@ -145,7 +195,9 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek 
       const a = anchor(i);
       if (!a) return;
       const top = a.wrap.offsetTop + a.wrap.offsetHeight * a.y - container.clientHeight * 0.4;
-      container.scrollTo({ top: Math.max(0, top), behavior: smooth ? 'smooth' : 'auto' });
+      const x = segs[i]?.r?.[0] ? (segs[i].r[0][1] + segs[i].r[0][3]) / 2 : 0.5;
+      const left = zoom > 1.01 ? a.wrap.offsetLeft + a.wrap.offsetWidth * x - container.clientWidth / 2 : container.scrollLeft;
+      container.scrollTo({ top: Math.max(0, top), left: Math.max(0, left), behavior: smooth ? 'smooth' : 'auto' });
     },
     isVisible(i) {
       const a = anchor(i);
@@ -155,6 +207,7 @@ export async function createPdfReader(container, manifest, sourceBlob, { onSeek 
     },
     destroy() {
       io.disconnect();
+      window.removeEventListener('resize', onResize);
       for (const c of rendered.values()) { c.width = c.height = 0; }
       rendered.clear();
       pdf.destroy();
